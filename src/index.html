@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Markdown Editor & Reader</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+</head>
+<body>
+    <div id="app">
+        <!-- 侧边栏 -->
+        <div id="sidebar" class="sidebar">
+            <div class="sidebar-header">
+                <h3>文件浏览器</h3>
+                <div class="sidebar-controls">
+                    <button id="scanBtn" class="btn btn-primary" title="扫描Markdown文件">
+                        📁 扫描文件
+                    </button>
+                    <button id="refreshBtn" class="btn btn-secondary" title="刷新列表">
+                        🔄
+                    </button>
+                </div>
+            </div>
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="搜索文件..." />
+            </div>
+            <div id="fileList" class="file-list">
+                <div class="empty-state">
+                    <p>点击"扫描文件"开始浏览Markdown文档</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 主内容区域 -->
+        <div id="main-content" class="main-content">
+            <!-- 工具栏 -->
+            <div id="toolbar" class="toolbar">
+                <div class="toolbar-left">
+                    <button id="newBtn" class="btn btn-primary" title="新建文件 (Ctrl+N)">
+                        📄 新建
+                    </button>
+                    <button id="openBtn" class="btn btn-secondary" title="打开文件 (Ctrl+O)">
+                        📂 打开
+                    </button>
+                    <button id="saveBtn" class="btn btn-secondary" title="保存 (Ctrl+S)">
+                        💾 保存
+                    </button>
+                    <button id="saveAsBtn" class="btn btn-secondary" title="另存为 (Ctrl+Shift+S)">
+                        💾 另存为
+                    </button>
+                </div>
+                <div class="toolbar-center">
+                    <span id="currentFile" class="current-file">未命名文档</span>
+                </div>
+                <div class="toolbar-right">
+                    <button id="modeToggle" class="btn btn-secondary" title="切换编辑/预览模式 (Ctrl+E)">
+                        👁️ 预览
+                    </button>
+                    <button id="themeToggle" class="btn btn-secondary" title="切换主题">
+                        🌙
+                    </button>
+                </div>
+            </div>
+
+            <!-- 编辑器和预览区域 -->
+            <div id="editor-container" class="editor-container">
+                <!-- 编辑器 -->
+                <div id="editor-panel" class="editor-panel">
+                    <div id="editor"></div>
+                </div>
+
+                <!-- 分割线 -->
+                <div id="splitter" class="splitter"></div>
+
+                <!-- 预览区域 -->
+                <div id="preview-panel" class="preview-panel">
+                    <div id="preview" class="preview-content">
+                        <div class="welcome-content">
+                            <h1>欢迎使用 Markdown Editor & Reader</h1>
+                            <p>这是一个跨平台的Markdown文档编辑和阅读工具</p>
+                            <h2>功能特性</h2>
+                            <ul>
+                                <li>✨ 实时预览编辑</li>
+                                <li>📁 文件扫描和管理</li>
+                                <li>🎨 语法高亮</li>
+                                <li>🌙 深色/浅色主题</li>
+                                <li>💾 自动保存</li>
+                                <li>🔍 文件搜索</li>
+                            </ul>
+                            <h2>快捷键</h2>
+                            <ul>
+                                <li><code>Ctrl+N</code> - 新建文件</li>
+                                <li><code>Ctrl+O</code> - 打开文件</li>
+                                <li><code>Ctrl+S</code> - 保存文件</li>
+                                <li><code>Ctrl+E</code> - 切换编辑/预览模式</li>
+                                <li><code>Ctrl+F</code> - 扫描Markdown文件</li>
+                            </ul>
+                            <p>开始使用：点击左侧的"扫描文件"按钮来浏览您的Markdown文档，或者创建一个新文件开始编写。</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 状态栏 -->
+    <div id="statusbar" class="statusbar">
+        <div class="status-left">
+            <span id="fileCount">文件: 0</span>
+            <span id="wordCount">字数: 0</span>
+        </div>
+        <div class="status-right">
+            <span id="cursorPosition">行 1, 列 1</span>
+            <span id="fileSize">0 B</span>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.2/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="renderer.js"></script>
+</body>
+</html>

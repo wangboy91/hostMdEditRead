@@ -1,0 +1,64 @@
+{
+  "name": "markdown-editor-reader",
+  "version": "1.0.0",
+  "description": "跨平台Markdown文档编辑和阅读工具",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "build": "electron-builder",
+    "build:mac": "electron-builder --mac",
+    "build:win": "electron-builder --win",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder",
+    "install:electron": "npm config set electron_mirror https://npmmirror.com/mirrors/electron/ && npm install electron",
+    "install:cn": "npm config set registry https://registry.npmmirror.com/ && npm config set electron_mirror https://npmmirror.com/mirrors/electron/ && npm install"
+  },
+  "keywords": ["markdown", "editor", "reader", "cross-platform"],
+  "author": "Your Name",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^22.3.27",
+    "electron-builder": "^24.6.4"
+  },
+  "dependencies": {
+    "marked": "^9.1.2",
+    "highlight.js": "^11.9.0"
+  },
+  "build": {
+    "appId": "com.yourcompany.markdown-editor",
+    "productName": "Markdown Editor & Reader",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "src/**/*",
+      "node_modules/**/*"
+    ],
+    "mac": {
+      "category": "public.app-category.productivity",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": ["x64", "arm64"]
+        }
+      ]
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64", "ia32"]
+        }
+      ]
+    },
+    "linux": {
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": ["x64"]
+        }
+      ]
+    }
+  }
+}
