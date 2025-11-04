@@ -172,12 +172,17 @@ body {
 
 .toolbar-center {
     flex: 1;
-    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 8px;
 }
 
 .current-file {
     font-weight: 500;
     color: var(--text-color);
+    font-size: 0.9em;
 }
 
 /* 按钮样式 */
@@ -212,6 +217,61 @@ body {
 
 .btn-secondary {
     background-color: var(--bg-secondary);
+}
+
+/* 图标按钮样式 */
+.btn-icon {
+    padding: 8px;
+    min-width: 36px;
+    min-height: 36px;
+    border-radius: 6px;
+    font-size: 1.1em;
+    justify-content: center;
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+}
+
+.btn-icon:hover {
+    background-color: var(--bg-tertiary);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow);
+}
+
+/* 视图模式按钮组 */
+.view-mode-buttons {
+    display: flex;
+    gap: 2px;
+    background-color: var(--bg-secondary);
+    border-radius: 8px;
+    padding: 4px;
+    margin: 0 16px;
+    border: 1px solid var(--border-color);
+}
+
+.btn-mode {
+    padding: 6px 12px;
+    border: none;
+    border-radius: 4px;
+    background-color: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 1em;
+    transition: all 0.2s;
+    min-width: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-mode:hover {
+    background-color: var(--bg-tertiary);
+    color: var(--text-color);
+}
+
+.btn-mode.active {
+    background-color: var(--primary-color);
+    color: white;
+    box-shadow: var(--shadow);
 }
 
 /* 编辑器容器 */

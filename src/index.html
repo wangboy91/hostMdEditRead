@@ -14,10 +14,10 @@
             <div class="sidebar-header">
                 <h3>文件浏览器</h3>
                 <div class="sidebar-controls">
-                    <button id="scanBtn" class="btn btn-primary" title="扫描Markdown文件">
-                        📁 扫描文件
+                    <button id="scanBtn" class="btn btn-icon" title="扫描Markdown文件">
+                        📁
                     </button>
-                    <button id="refreshBtn" class="btn btn-secondary" title="刷新列表">
+                    <button id="refreshBtn" class="btn btn-icon" title="刷新列表">
                         🔄
                     </button>
                 </div>
@@ -37,27 +37,35 @@
             <!-- 工具栏 -->
             <div id="toolbar" class="toolbar">
                 <div class="toolbar-left">
-                    <button id="newBtn" class="btn btn-primary" title="新建文件 (Ctrl+N)">
-                        📄 新建
+                    <button id="newBtn" class="btn btn-icon" title="新建文件 (Ctrl+N)">
+                        📄
                     </button>
-                    <button id="openBtn" class="btn btn-secondary" title="打开文件 (Ctrl+O)">
-                        📂 打开
+                    <button id="openBtn" class="btn btn-icon" title="打开文件 (Ctrl+O)">
+                        📂
                     </button>
-                    <button id="saveBtn" class="btn btn-secondary" title="保存 (Ctrl+S)">
-                        💾 保存
+                    <button id="saveBtn" class="btn btn-icon" title="保存 (Ctrl+S)">
+                        💾
                     </button>
-                    <button id="saveAsBtn" class="btn btn-secondary" title="另存为 (Ctrl+Shift+S)">
-                        💾 另存为
+                    <button id="saveAsBtn" class="btn btn-icon" title="另存为 (Ctrl+Shift+S)">
+                        💿
                     </button>
                 </div>
                 <div class="toolbar-center">
+                    <div class="view-mode-buttons">
+                        <button id="editModeBtn" class="btn btn-mode" title="纯编辑模式">
+                            ✏️
+                        </button>
+                        <button id="splitModeBtn" class="btn btn-mode active" title="分割视图模式">
+                            ⚌
+                        </button>
+                        <button id="previewModeBtn" class="btn btn-mode" title="纯预览模式">
+                            👁️
+                        </button>
+                    </div>
                     <span id="currentFile" class="current-file">未命名文档</span>
                 </div>
                 <div class="toolbar-right">
-                    <button id="modeToggle" class="btn btn-secondary" title="切换编辑/预览模式 (Ctrl+E)">
-                        👁️ 预览
-                    </button>
-                    <button id="themeToggle" class="btn btn-secondary" title="切换主题">
+                    <button id="themeToggle" class="btn btn-icon" title="切换主题">
                         🌙
                     </button>
                 </div>

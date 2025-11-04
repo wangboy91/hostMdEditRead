@@ -23,7 +23,9 @@ class MarkdownEditor {
             loadFileBtn: document.getElementById('loadFileBtn'),
             saveBtn: document.getElementById('saveBtn'),
             exportBtn: document.getElementById('exportBtn'),
-            modeToggle: document.getElementById('modeToggle'),
+            editModeBtn: document.getElementById('editModeBtn'),
+            splitModeBtn: document.getElementById('splitModeBtn'),
+            previewModeBtn: document.getElementById('previewModeBtn'),
             themeToggle: document.getElementById('themeToggle'),
             
             // 侧边栏
@@ -56,7 +58,9 @@ class MarkdownEditor {
         this.elements.loadFileBtn.addEventListener('click', () => this.loadFiles());
         this.elements.saveBtn.addEventListener('click', () => this.saveFile());
         this.elements.exportBtn.addEventListener('click', () => this.exportHTML());
-        this.elements.modeToggle.addEventListener('click', () => this.toggleMode());
+        this.elements.editModeBtn.addEventListener('click', () => this.setMode('edit'));
+        this.elements.splitModeBtn.addEventListener('click', () => this.setMode('split'));
+        this.elements.previewModeBtn.addEventListener('click', () => this.setMode('preview'));
         this.elements.themeToggle.addEventListener('click', () => this.toggleTheme());
         
         // 侧边栏
@@ -323,19 +327,21 @@ ${marked.parse(content)}
         URL.revokeObjectURL(url);
     }
     
+    setMode(mode) {
+        this.currentMode = mode;
+        this.elements.editorContainer.className = `editor-container mode-${this.currentMode}`;
+        
+        // 更新按钮状态
+        this.elements.editModeBtn.classList.toggle('active', mode === 'edit');
+        this.elements.splitModeBtn.classList.toggle('active', mode === 'split');
+        this.elements.previewModeBtn.classList.toggle('active', mode === 'preview');
+    }
+    
     toggleMode() {
         const modes = ['split', 'edit', 'preview'];
         const currentIndex = modes.indexOf(this.currentMode);
-        this.currentMode = modes[(currentIndex + 1) % modes.length];
-        
-        this.elements.editorContainer.className = `editor-container mode-${this.currentMode}`;
-        
-        const modeTexts = {
-            split: '👁️ 预览',
-            edit: '📝 编辑',
-            preview: '🔄 分割'
-        };
-        this.elements.modeToggle.textContent = modeTexts[this.currentMode];
+        const newMode = modes[(currentIndex + 1) % modes.length];
+        this.setMode(newMode);
     }
     
     toggleTheme() {
@@ -406,6 +412,11 @@ ${marked.parse(content)}
             this.onEditorChange();
         }
         
+        // 更新视图模式按钮状态
+        this.elements.editModeBtn.classList.toggle('active', this.currentMode === 'edit');
+        this.elements.splitModeBtn.classList.toggle('active', this.currentMode === 'split');
+        this.elements.previewModeBtn.classList.toggle('active', this.currentMode === 'preview');
+        
         // 更新光标位置
         setTimeout(() => this.updateCursorPosition(), 0);
     }
@@ -458,6 +469,11 @@ ${marked.parse(content)}
         // 更新文件大小
         const size = new Blob([content]).size;
         this.elements.fileSize.textContent = this.formatFileSize(size);
+        
+        // 更新视图模式按钮状态
+        this.elements.editModeBtn.classList.toggle('active', this.currentMode === 'edit');
+        this.elements.splitModeBtn.classList.toggle('active', this.currentMode === 'split');
+        this.elements.previewModeBtn.classList.toggle('active', this.currentMode === 'preview');
         
         // 更新光标位置
         this.updateCursorPosition();

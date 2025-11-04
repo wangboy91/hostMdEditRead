@@ -15,10 +15,10 @@
                 <h3>文件浏览器</h3>
                 <div class="sidebar-controls">
                     <input type="file" id="fileInput" multiple accept=".md,.markdown" style="display: none;">
-                    <button id="loadBtn" class="btn btn-primary" title="加载Markdown文件">
-                        📁 加载文件
+                    <button id="loadBtn" class="btn btn-icon" title="加载Markdown文件">
+                        📁
                     </button>
-                    <button id="clearBtn" class="btn btn-secondary" title="清空列表">
+                    <button id="clearBtn" class="btn btn-icon" title="清空列表">
                         🗑️
                     </button>
                 </div>
@@ -38,27 +38,35 @@
             <!-- 工具栏 -->
             <div id="toolbar" class="toolbar">
                 <div class="toolbar-left">
-                    <button id="newBtn" class="btn btn-primary" title="新建文件">
-                        📄 新建
+                    <button id="newBtn" class="btn btn-icon" title="新建文件 (Ctrl+N)">
+                        📄
                     </button>
-                    <button id="loadFileBtn" class="btn btn-secondary" title="加载文件">
-                        📂 加载
+                    <button id="loadFileBtn" class="btn btn-icon" title="加载文件 (Ctrl+O)">
+                        📂
                     </button>
-                    <button id="saveBtn" class="btn btn-secondary" title="保存文件">
-                        💾 保存
+                    <button id="saveBtn" class="btn btn-icon" title="保存文件 (Ctrl+S)">
+                        💾
                     </button>
-                    <button id="exportBtn" class="btn btn-secondary" title="导出HTML">
-                        📤 导出
+                    <button id="exportBtn" class="btn btn-icon" title="导出HTML">
+                        📤
                     </button>
                 </div>
                 <div class="toolbar-center">
+                    <div class="view-mode-buttons">
+                        <button id="editModeBtn" class="btn btn-mode" title="纯编辑模式">
+                            ✏️
+                        </button>
+                        <button id="splitModeBtn" class="btn btn-mode active" title="分割视图模式">
+                            ⚌
+                        </button>
+                        <button id="previewModeBtn" class="btn btn-mode" title="纯预览模式">
+                            👁️
+                        </button>
+                    </div>
                     <span id="currentFile" class="current-file">未命名文档</span>
                 </div>
                 <div class="toolbar-right">
-                    <button id="modeToggle" class="btn btn-secondary" title="切换编辑/预览模式">
-                        👁️ 预览
-                    </button>
-                    <button id="themeToggle" class="btn btn-secondary" title="切换主题">
+                    <button id="themeToggle" class="btn btn-icon" title="切换主题">
                         🌙
                     </button>
                 </div>

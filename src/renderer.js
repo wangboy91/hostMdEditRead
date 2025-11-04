@@ -24,7 +24,9 @@ function initApp() {
         openBtn: document.getElementById('openBtn'),
         saveBtn: document.getElementById('saveBtn'),
         saveAsBtn: document.getElementById('saveAsBtn'),
-        modeToggle: document.getElementById('modeToggle'),
+        editModeBtn: document.getElementById('editModeBtn'),
+        splitModeBtn: document.getElementById('splitModeBtn'),
+        previewModeBtn: document.getElementById('previewModeBtn'),
         themeToggle: document.getElementById('themeToggle'),
         
         // 侧边栏
@@ -94,7 +96,9 @@ function setupEventListeners() {
     elements.openBtn.addEventListener('click', openFile);
     elements.saveBtn.addEventListener('click', saveFile);
     elements.saveAsBtn.addEventListener('click', saveAsFile);
-    elements.modeToggle.addEventListener('click', toggleMode);
+    elements.editModeBtn.addEventListener('click', () => setMode('edit'));
+    elements.splitModeBtn.addEventListener('click', () => setMode('split'));
+    elements.previewModeBtn.addEventListener('click', () => setMode('preview'));
     elements.themeToggle.addEventListener('click', toggleTheme);
     
     // 侧边栏
@@ -419,21 +423,29 @@ function updateFileListSelection() {
     }
 }
 
-// 切换模式
+// 设置视图模式
+function setMode(mode) {
+    currentMode = mode;
+    elements.editorContainer.className = `editor-container mode-${currentMode}`;
+    
+    // 更新按钮状态
+    if (elements.editModeBtn) {
+        elements.editModeBtn.classList.toggle('active', mode === 'edit');
+    }
+    if (elements.splitModeBtn) {
+        elements.splitModeBtn.classList.toggle('active', mode === 'split');
+    }
+    if (elements.previewModeBtn) {
+        elements.previewModeBtn.classList.toggle('active', mode === 'preview');
+    }
+}
+
+// 切换模式（保留用于快捷键）
 function toggleMode() {
     const modes = ['split', 'edit', 'preview'];
     const currentIndex = modes.indexOf(currentMode);
-    currentMode = modes[(currentIndex + 1) % modes.length];
-    
-    elements.editorContainer.className = `editor-container mode-${currentMode}`;
-    
-    // 更新按钮文本
-    const modeTexts = {
-        split: '👁️ 预览',
-        edit: '📝 编辑',
-        preview: '🔄 分割'
-    };
-    elements.modeToggle.textContent = modeTexts[currentMode];
+    const newMode = modes[(currentIndex + 1) % modes.length];
+    setMode(newMode);
 }
 
 // 切换主题
@@ -595,6 +607,17 @@ function updateUI() {
                             size < 1024 * 1024 ? `${(size / 1024).toFixed(1)} KB` :
                             `${(size / (1024 * 1024)).toFixed(1)} MB`;
             elements.fileSize.textContent = sizeText;
+        }
+        
+        // 更新视图模式按钮状态
+        if (elements.editModeBtn) {
+            elements.editModeBtn.classList.toggle('active', currentMode === 'edit');
+        }
+        if (elements.splitModeBtn) {
+            elements.splitModeBtn.classList.toggle('active', currentMode === 'split');
+        }
+        if (elements.previewModeBtn) {
+            elements.previewModeBtn.classList.toggle('active', currentMode === 'preview');
         }
         
         // 更新光标位置
