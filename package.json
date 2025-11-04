@@ -11,8 +11,12 @@
     "build:win": "electron-builder --win",
     "pack": "electron-builder --dir",
     "dist": "electron-builder",
-    "install:electron": "npm config set electron_mirror https://npmmirror.com/mirrors/electron/ && npm install electron",
-    "install:cn": "npm config set registry https://registry.npmmirror.com/ && npm config set electron_mirror https://npmmirror.com/mirrors/electron/ && npm install"
+    "prebuild": "npm run setup:mirrors",
+    "prepack": "npm run setup:mirrors",
+    "setup:mirrors": "npm config set registry https://registry.npmmirror.com/ && npm config set electron_mirror https://npmmirror.com/mirrors/electron/ && npm config set electron_builder_binaries_mirror https://npmmirror.com/mirrors/electron-builder-binaries/",
+    "install:electron": "npm run setup:mirrors && npm install electron",
+    "install:cn": "npm run setup:mirrors && npm install",
+    "fix:build": "./fix-build.sh"
   },
   "keywords": [
     "markdown",
@@ -35,6 +39,9 @@
     "productName": "Markdown Editor & Reader",
     "directories": {
       "output": "dist"
+    },
+    "electronDownload": {
+      "mirror": "https://npmmirror.com/mirrors/electron/"
     },
     "files": [
       "src/**/*",
