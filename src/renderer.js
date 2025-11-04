@@ -50,11 +50,20 @@ function initApp() {
     };
     
     // 检查关键元素是否存在
-    const requiredElements = ['editor', 'preview', 'fileCount', 'wordCount', 'currentFile'];
+    const requiredElements = ['editor', 'preview'];
+    const optionalElements = ['fileCount', 'wordCount', 'currentFile', 'cursorPosition', 'fileSize'];
+    
     for (const elementName of requiredElements) {
         if (!elements[elementName]) {
             console.error(`Required element not found: ${elementName}`);
             return;
+        }
+    }
+    
+    // 警告缺失的可选元素
+    for (const elementName of optionalElements) {
+        if (!elements[elementName]) {
+            console.warn(`Optional element not found: ${elementName}`);
         }
     }
     
@@ -463,9 +472,13 @@ function onEditorKeydown(e) {
 
 // 更新光标位置
 function updateCursorPosition() {
+    if (!elements.editor || !elements.cursorPosition) {
+        return;
+    }
+    
     const textarea = elements.editor;
-    const text = textarea.value;
-    const cursorPos = textarea.selectionStart;
+    const text = textarea.value || '';
+    const cursorPos = textarea.selectionStart || 0;
     
     const lines = text.substring(0, cursorPos).split('\n');
     const line = lines.length;
@@ -505,23 +518,31 @@ function updateUI() {
     // 更新文件名显示
     const fileName = currentFile ? path.basename(currentFile) : '未命名文档';
     const modifiedIndicator = isModified ? ' *' : '';
-    elements.currentFile.textContent = fileName + modifiedIndicator;
+    if (elements.currentFile) {
+        elements.currentFile.textContent = fileName + modifiedIndicator;
+    }
     
     // 更新文件计数
-    elements.fileCount.textContent = `文件: ${filteredFiles ? filteredFiles.length : 0}`;
+    if (elements.fileCount) {
+        elements.fileCount.textContent = `文件: ${filteredFiles ? filteredFiles.length : 0}`;
+    }
     
     // 更新字数统计
     const content = elements.editor ? elements.editor.value : '';
     const wordCount = content.length;
     const charCount = content.replace(/\s/g, '').length;
-    elements.wordCount.textContent = `字数: ${charCount} / ${wordCount}`;
+    if (elements.wordCount) {
+        elements.wordCount.textContent = `字数: ${charCount} / ${wordCount}`;
+    }
     
     // 更新文件大小
     const size = new Blob([content]).size;
     const sizeText = size < 1024 ? `${size} B` : 
                     size < 1024 * 1024 ? `${(size / 1024).toFixed(1)} KB` :
                     `${(size / (1024 * 1024)).toFixed(1)} MB`;
-    elements.fileSize.textContent = sizeText;
+    if (elements.fileSize) {
+        elements.fileSize.textContent = sizeText;
+    }
     
     // 更新光标位置
     updateCursorPosition();
