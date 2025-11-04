@@ -11,6 +11,7 @@ let currentTheme = 'light';
 let markdownFiles = [];
 let filteredFiles = [];
 let editor = null;
+let lastScannedDirectory = null; // 记录最后扫描的根目录
 
 // DOM 元素 - 将在initApp中初始化
 let elements = {};
@@ -314,6 +315,7 @@ async function scanFiles() {
             
             const scanResult = await ipcRenderer.invoke('scan-markdown-files', result.path);
             if (scanResult.success) {
+                lastScannedDirectory = result.path; // 记录扫描的根目录
                 markdownFiles = scanResult.files;
                 filteredFiles = [...markdownFiles];
                 renderFileList();
@@ -326,14 +328,46 @@ async function scanFiles() {
         console.error('扫描文件失败:', error);
         alert('扫描文件失败: ' + error.message);
     } finally {
-        elements.scanBtn.innerHTML = '📁 扫描文件';
+        elements.scanBtn.innerHTML = '📁';
         elements.scanBtn.disabled = false;
     }
 }
 
 // 刷新文件列表
-function refreshFileList() {
-    renderFileList();
+async function refreshFileList() {
+    // 如果没有扫描过任何目录，则只重新渲染
+    if (!lastScannedDirectory) {
+        renderFileList();
+        return;
+    }
+    
+    try {
+        // 显示刷新状态
+        elements.refreshBtn.innerHTML = '<div class="loading"></div>';
+        elements.refreshBtn.disabled = true;
+        
+        // 重新扫描最后扫描的根目录
+        const scanResult = await ipcRenderer.invoke('scan-markdown-files', lastScannedDirectory);
+        if (scanResult.success) {
+            markdownFiles = scanResult.files;
+            // 重新应用搜索过滤
+            filterFiles();
+            updateUI();
+            
+            // 显示刷新成功的提示
+            console.log(`已刷新文件列表，找到 ${markdownFiles.length} 个 Markdown 文件`);
+        } else {
+            console.error('刷新文件列表失败:', scanResult.error);
+            alert('刷新文件列表失败: ' + scanResult.error);
+        }
+    } catch (error) {
+        console.error('刷新文件列表失败:', error);
+        alert('刷新文件列表失败: ' + error.message);
+    } finally {
+        // 恢复刷新按钮状态
+        elements.refreshBtn.innerHTML = '🔄';
+        elements.refreshBtn.disabled = false;
+    }
 }
 
 // 过滤文件
