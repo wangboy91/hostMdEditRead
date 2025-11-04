@@ -348,43 +348,75 @@ function filterFiles() {
 
 // 渲染文件列表
 function renderFileList() {
-    if (filteredFiles.length === 0) {
-        elements.fileList.innerHTML = `
-            <div class="empty-state">
-                <p>${markdownFiles.length === 0 ? '点击"扫描文件"开始浏览Markdown文档' : '没有找到匹配的文件'}</p>
-            </div>
-        `;
-        return;
-    }
-    
-    const html = filteredFiles.map(file => `
-        <div class="file-item" data-path="${file.path}">
-            <div class="file-name">${file.name}</div>
-            <div class="file-path">${file.directory}</div>
-        </div>
-    `).join('');
-    
-    elements.fileList.innerHTML = html;
-    
-    // 添加点击事件
-    elements.fileList.querySelectorAll('.file-item').forEach(item => {
-        item.addEventListener('click', () => {
-            const filePath = item.dataset.path;
-            if (isModified && !confirm('当前文件未保存，确定要打开新文件吗？')) {
-                return;
-            }
-            loadFile(filePath);
+    try {
+        if (!elements || !elements.fileList) {
+            console.warn('fileList element not found');
+            return;
+        }
+
+        // 确保数组已初始化
+        if (!Array.isArray(filteredFiles)) {
+            filteredFiles = [];
+        }
+        if (!Array.isArray(markdownFiles)) {
+            markdownFiles = [];
+        }
+
+        if (filteredFiles.length === 0) {
+            elements.fileList.innerHTML = `
+                <div class="empty-state">
+                    <p>${markdownFiles.length === 0 ? '点击"扫描文件"开始浏览Markdown文档' : '没有找到匹配的文件'}</p>
+                </div>
+            `;
+            return;
+        }
+        
+        const html = filteredFiles.map(file => {
+            const safePath = file && file.path ? file.path : '';
+            const safeName = file && file.name ? file.name : '未知文件';
+            const safeDirectory = file && file.directory ? file.directory : '';
+            
+            return `
+                <div class="file-item" data-path="${safePath}">
+                    <div class="file-name">${safeName}</div>
+                    <div class="file-path">${safeDirectory}</div>
+                </div>
+            `;
+        }).join('');
+        
+        elements.fileList.innerHTML = html;
+        
+        // 添加点击事件
+        elements.fileList.querySelectorAll('.file-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const filePath = item.dataset.path;
+                if (filePath && (!isModified || confirm('当前文件未保存，确定要打开新文件吗？'))) {
+                    loadFile(filePath);
+                }
+            });
         });
-    });
-    
-    updateFileListSelection();
+        
+        updateFileListSelection();
+        
+    } catch (error) {
+        console.error('renderFileList error:', error);
+        if (elements && elements.fileList) {
+            elements.fileList.innerHTML = '<div class="empty-state"><p>文件列表加载出错</p></div>';
+        }
+    }
 }
 
 // 更新文件列表选中状态
 function updateFileListSelection() {
-    elements.fileList.querySelectorAll('.file-item').forEach(item => {
-        item.classList.toggle('active', item.dataset.path === currentFile);
-    });
+    try {
+        if (elements && elements.fileList) {
+            elements.fileList.querySelectorAll('.file-item').forEach(item => {
+                item.classList.toggle('active', item.dataset.path === currentFile);
+            });
+        }
+    } catch (error) {
+        console.error('updateFileListSelection error:', error);
+    }
 }
 
 // 切换模式
@@ -481,8 +513,8 @@ function updateCursorPosition() {
     const cursorPos = textarea.selectionStart || 0;
     
     const lines = text.substring(0, cursorPos).split('\n');
-    const line = lines.length;
-    const column = lines[lines.length - 1].length + 1;
+    const line = lines ? lines.length : 1;
+    const column = (lines && lines.length > 0) ? lines[lines.length - 1].length + 1 : 1;
     
     elements.cursorPosition.textContent = `行 ${line}, 列 ${column}`;
 }
@@ -515,37 +547,63 @@ function handleKeyboardShortcuts(e) {
 
 // 更新UI
 function updateUI() {
-    // 更新文件名显示
-    const fileName = currentFile ? path.basename(currentFile) : '未命名文档';
-    const modifiedIndicator = isModified ? ' *' : '';
-    if (elements.currentFile) {
-        elements.currentFile.textContent = fileName + modifiedIndicator;
+    try {
+        // 确保所有必要的变量都已初始化
+        if (typeof filteredFiles === 'undefined') {
+            filteredFiles = [];
+        }
+        if (typeof markdownFiles === 'undefined') {
+            markdownFiles = [];
+        }
+        if (typeof currentFile === 'undefined') {
+            currentFile = null;
+        }
+        if (typeof isModified === 'undefined') {
+            isModified = false;
+        }
+
+        // 更新文件名显示
+        const fileName = currentFile ? path.basename(currentFile) : '未命名文档';
+        const modifiedIndicator = isModified ? ' *' : '';
+        if (elements && elements.currentFile) {
+            elements.currentFile.textContent = fileName + modifiedIndicator;
+        }
+        
+        // 更新文件计数
+        if (elements && elements.fileCount) {
+            const count = (filteredFiles && Array.isArray(filteredFiles)) ? filteredFiles.length : 0;
+            elements.fileCount.textContent = `文件: ${count}`;
+        }
+        
+        // 更新字数统计
+        let content = '';
+        if (elements && elements.editor && typeof elements.editor.value === 'string') {
+            content = elements.editor.value;
+        }
+        
+        const wordCount = content ? content.length : 0;
+        const charCount = content ? content.replace(/\s/g, '').length : 0;
+        
+        if (elements && elements.wordCount) {
+            elements.wordCount.textContent = `字数: ${charCount} / ${wordCount}`;
+        }
+        
+        // 更新文件大小
+        if (elements && elements.fileSize) {
+            const size = new Blob([content]).size;
+            const sizeText = size < 1024 ? `${size} B` : 
+                            size < 1024 * 1024 ? `${(size / 1024).toFixed(1)} KB` :
+                            `${(size / (1024 * 1024)).toFixed(1)} MB`;
+            elements.fileSize.textContent = sizeText;
+        }
+        
+        // 更新光标位置
+        updateCursorPosition();
+        
+    } catch (error) {
+        console.error('updateUI error:', error);
+        // 即使出错也不要阻止应用运行
     }
-    
-    // 更新文件计数
-    if (elements.fileCount) {
-        elements.fileCount.textContent = `文件: ${filteredFiles ? filteredFiles.length : 0}`;
-    }
-    
-    // 更新字数统计
-    const content = elements.editor ? elements.editor.value : '';
-    const wordCount = content.length;
-    const charCount = content.replace(/\s/g, '').length;
-    if (elements.wordCount) {
-        elements.wordCount.textContent = `字数: ${charCount} / ${wordCount}`;
-    }
-    
-    // 更新文件大小
-    const size = new Blob([content]).size;
-    const sizeText = size < 1024 ? `${size} B` : 
-                    size < 1024 * 1024 ? `${(size / 1024).toFixed(1)} KB` :
-                    `${(size / (1024 * 1024)).toFixed(1)} MB`;
-    if (elements.fileSize) {
-        elements.fileSize.textContent = sizeText;
-    }
-    
-    // 更新光标位置
-    updateCursorPosition();
 }
 
 // 应用启动
