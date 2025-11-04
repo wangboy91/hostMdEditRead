@@ -175,8 +175,6 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    flex-direction: column;
-    gap: 8px;
 }
 
 .current-file {
@@ -244,7 +242,7 @@ body {
     background-color: var(--bg-secondary);
     border-radius: 8px;
     padding: 4px;
-    margin: 0 16px;
+    margin-right: 8px;
     border: 1px solid var(--border-color);
 }
 
