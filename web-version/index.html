@@ -18,17 +18,42 @@
                     <button id="loadBtn" class="btn btn-icon" title="加载Markdown文件">
                         📁
                     </button>
-                    <button id="clearBtn" class="btn btn-icon" title="清空列表">
+                    <button id="refreshBtn" class="btn btn-icon" title="清空文件列表">
                         🗑️
                     </button>
+                    <div class="dropdown">
+                        <button id="historyBtn" class="btn btn-icon" title="历史记录">
+                            📋
+                        </button>
+                        <div id="historyDropdown" class="dropdown-content">
+                            <div class="dropdown-header">最近文件</div>
+                            <div id="historyList" class="history-list"></div>
+                        </div>
+                    </div>
                 </div>
             </div>
             <div class="search-box">
                 <input type="text" id="searchInput" placeholder="搜索文件..." />
             </div>
-            <div id="fileList" class="file-list">
+            
+            <!-- 最近记录标签页 -->
+            <div class="sidebar-tabs">
+                <button id="filesTab" class="tab-btn active">文件列表</button>
+                <button id="recentTab" class="tab-btn">最近记录</button>
+            </div>
+            
+            <!-- 文件列表 -->
+            <div id="fileList" class="file-list tab-content active">
                 <div class="empty-state">
                     <p>点击"加载文件"开始浏览Markdown文档</p>
+                </div>
+            </div>
+            
+            <!-- 最近记录 -->
+            <div id="recentList" class="recent-list tab-content">
+                <div class="recent-section">
+                    <h4>最近文件</h4>
+                    <div id="recentFiles" class="recent-files"></div>
                 </div>
             </div>
         </div>
@@ -97,6 +122,7 @@
                                 <li>💾 本地存储</li>
                                 <li>🔍 文件搜索</li>
                                 <li>📤 导出HTML</li>
+                                <li>📝 最近记录</li>
                             </ul>
                             <h2>使用说明</h2>
                             <ul>

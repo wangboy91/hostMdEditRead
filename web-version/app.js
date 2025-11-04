@@ -8,8 +8,10 @@ class MarkdownEditor {
         this.currentTheme = 'light';
         this.loadedFiles = [];
         this.filteredFiles = [];
+        this.recentFiles = []; // 最近文件记录
         
         this.initElements();
+        this.loadFromStorage(); // 先加载数据
         this.setupEventListeners();
         this.loadTheme();
         this.updateUI();
@@ -30,10 +32,21 @@ class MarkdownEditor {
             
             // 侧边栏
             loadBtn: document.getElementById('loadBtn'),
-            clearBtn: document.getElementById('clearBtn'),
+            refreshBtn: document.getElementById('refreshBtn'),
             fileInput: document.getElementById('fileInput'),
             searchInput: document.getElementById('searchInput'),
             fileList: document.getElementById('fileList'),
+            
+            // 标签页
+            filesTab: document.getElementById('filesTab'),
+            recentTab: document.getElementById('recentTab'),
+            recentList: document.getElementById('recentList'),
+            recentFiles: document.getElementById('recentFiles'),
+            
+            // 历史下拉菜单
+            historyBtn: document.getElementById('historyBtn'),
+            historyDropdown: document.getElementById('historyDropdown'),
+            historyList: document.getElementById('historyList'),
             
             // 编辑器和预览
             editor: document.getElementById('editor'),
@@ -65,9 +78,23 @@ class MarkdownEditor {
         
         // 侧边栏
         this.elements.loadBtn.addEventListener('click', () => this.loadFiles());
-        this.elements.clearBtn.addEventListener('click', () => this.clearFiles());
+        this.elements.refreshBtn.addEventListener('click', () => this.refreshFileList());
         this.elements.fileInput.addEventListener('change', (e) => this.handleFileLoad(e));
         this.elements.searchInput.addEventListener('input', () => this.filterFiles());
+        
+        // 标签页
+        this.elements.filesTab.addEventListener('click', () => this.switchTab('files'));
+        this.elements.recentTab.addEventListener('click', () => this.switchTab('recent'));
+        
+        // 历史下拉菜单
+        this.elements.historyBtn.addEventListener('click', () => this.toggleHistoryDropdown());
+        
+        // 点击其他地方关闭下拉菜单
+        document.addEventListener('click', (e) => {
+            if (!this.elements.historyBtn.contains(e.target) && !this.elements.historyDropdown.contains(e.target)) {
+                this.closeHistoryDropdown();
+            }
+        });
         
         // 编辑器
         this.elements.editor.addEventListener('input', () => this.onEditorChange());
@@ -82,9 +109,6 @@ class MarkdownEditor {
         
         // 自动保存
         setInterval(() => this.autoSave(), 30000);
-        
-        // 页面加载时恢复数据
-        this.loadFromStorage();
     }
     
     setupMarked() {
@@ -130,6 +154,226 @@ class MarkdownEditor {
         });
     }
     
+    // 本地存储管理
+    saveToStorage() {
+        try {
+            const data = {
+                currentFile: this.currentFile,
+                currentContent: this.elements.editor.value,
+                loadedFiles: this.loadedFiles,
+                recentFiles: this.recentFiles,
+                currentTheme: this.currentTheme,
+                currentMode: this.currentMode
+            };
+            localStorage.setItem('markdownEditorWeb', JSON.stringify(data));
+        } catch (error) {
+            console.error('保存本地数据失败:', error);
+        }
+    }
+    
+    loadFromStorage() {
+        try {
+            const data = JSON.parse(localStorage.getItem('markdownEditorWeb') || '{}');
+            
+            if (data.loadedFiles) {
+                this.loadedFiles = data.loadedFiles;
+                this.filteredFiles = [...this.loadedFiles];
+            }
+            
+            if (data.recentFiles) {
+                this.recentFiles = data.recentFiles;
+            }
+            
+            if (data.currentFile && data.currentContent !== undefined) {
+                this.currentFile = data.currentFile;
+                this.currentContent = data.currentContent;
+                if (this.elements.editor) {
+                    this.elements.editor.value = data.currentContent;
+                }
+            }
+            
+            if (data.currentTheme) {
+                this.currentTheme = data.currentTheme;
+            }
+            
+            if (data.currentMode) {
+                this.currentMode = data.currentMode;
+            }
+        } catch (error) {
+            console.error('加载本地数据失败:', error);
+            // 重置为默认值
+            this.recentFiles = [];
+        }
+    }
+    
+    // 添加文件到最近记录
+    addToRecentFiles(fileName, content) {
+        if (!fileName) return;
+        
+        // 移除已存在的记录
+        this.recentFiles = this.recentFiles.filter(file => file.name !== fileName);
+        
+        // 添加到开头
+        this.recentFiles.unshift({
+            name: fileName,
+            content: content,
+            timestamp: Date.now(),
+            size: new Blob([content]).size
+        });
+        
+        // 保持最多10条记录
+        if (this.recentFiles.length > 10) {
+            this.recentFiles = this.recentFiles.slice(0, 10);
+        }
+        
+        this.saveToStorage();
+    }
+    
+    // 标签页切换
+    switchTab(tabName) {
+        // 更新标签按钮状态
+        this.elements.filesTab.classList.toggle('active', tabName === 'files');
+        this.elements.recentTab.classList.toggle('active', tabName === 'recent');
+        
+        // 更新内容显示
+        this.elements.fileList.classList.toggle('active', tabName === 'files');
+        this.elements.recentList.classList.toggle('active', tabName === 'recent');
+        
+        // 如果切换到最近记录标签，渲染最近记录
+        if (tabName === 'recent') {
+            this.renderRecentRecords();
+        }
+    }
+    
+    // 渲染最近记录
+    renderRecentRecords() {
+        this.renderRecentFiles();
+    }
+    
+    // 渲染最近文件
+    renderRecentFiles() {
+        if (!this.elements.recentFiles) return;
+        
+        if (this.recentFiles.length === 0) {
+            this.elements.recentFiles.innerHTML = '<div class="recent-empty">暂无最近文件</div>';
+            return;
+        }
+        
+        const html = this.recentFiles.map(file => {
+            const timeStr = this.formatTime(file.timestamp);
+            return `
+                <div class="recent-item" data-name="${file.name}">
+                    <div class="recent-item-name">📄 ${file.name}</div>
+                    <div class="recent-item-path">大小: ${this.formatFileSize(file.size)}</div>
+                    <div class="recent-item-time">${timeStr}</div>
+                </div>
+            `;
+        }).join('');
+        
+        this.elements.recentFiles.innerHTML = html;
+        
+        // 添加点击事件
+        this.elements.recentFiles.querySelectorAll('.recent-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const fileName = item.dataset.name;
+                const file = this.recentFiles.find(f => f.name === fileName);
+                if (file && (!this.isModified || confirm('当前文件未保存，确定要打开新文件吗？'))) {
+                    this.loadFileContent({
+                        name: file.name,
+                        content: file.content,
+                        size: file.size,
+                        id: Date.now()
+                    });
+                    // 切换到文件列表标签
+                    this.switchTab('files');
+                }
+            });
+        });
+    }
+    
+    // 切换历史下拉菜单
+    toggleHistoryDropdown() {
+        const dropdown = this.elements.historyBtn.parentElement;
+        const isActive = dropdown.classList.contains('active');
+        
+        if (isActive) {
+            this.closeHistoryDropdown();
+        } else {
+            this.openHistoryDropdown();
+        }
+    }
+    
+    // 打开历史下拉菜单
+    openHistoryDropdown() {
+        const dropdown = this.elements.historyBtn.parentElement;
+        dropdown.classList.add('active');
+        this.renderHistoryList();
+    }
+    
+    // 关闭历史下拉菜单
+    closeHistoryDropdown() {
+        const dropdown = this.elements.historyBtn.parentElement;
+        dropdown.classList.remove('active');
+    }
+    
+    // 渲染历史列表
+    renderHistoryList() {
+        if (!this.elements.historyList) return;
+        
+        if (this.recentFiles.length === 0) {
+            this.elements.historyList.innerHTML = '<div class="history-empty">暂无历史记录</div>';
+            return;
+        }
+        
+        const html = this.recentFiles.slice(0, 5).map(file => {
+            return `
+                <div class="history-item" data-name="${file.name}">
+                    <div class="history-item-name">📄 ${file.name}</div>
+                    <div class="history-item-path">大小: ${this.formatFileSize(file.size)}</div>
+                </div>
+            `;
+        }).join('');
+        
+        this.elements.historyList.innerHTML = html;
+        
+        // 添加点击事件
+        this.elements.historyList.querySelectorAll('.history-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const fileName = item.dataset.name;
+                const file = this.recentFiles.find(f => f.name === fileName);
+                this.closeHistoryDropdown();
+                
+                if (file && (!this.isModified || confirm('当前文件未保存，确定要打开新文件吗？'))) {
+                    this.loadFileContent({
+                        name: file.name,
+                        content: file.content,
+                        size: file.size,
+                        id: Date.now()
+                    });
+                    // 确保在文件列表标签
+                    this.switchTab('files');
+                }
+            });
+        });
+    }
+    
+    // 格式化时间
+    formatTime(timestamp) {
+        const now = Date.now();
+        const diff = now - timestamp;
+        const minutes = Math.floor(diff / (1000 * 60));
+        const hours = Math.floor(diff / (1000 * 60 * 60));
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+        
+        if (minutes < 1) return '刚刚';
+        if (minutes < 60) return `${minutes}分钟前`;
+        if (hours < 24) return `${hours}小时前`;
+        if (days < 7) return `${days}天前`;
+        
+        const date = new Date(timestamp);
+        return date.toLocaleDateString('zh-CN');
+    }
+    
     newFile() {
         if (this.isModified && !confirm('当前文件未保存，确定要新建文件吗？')) {
             return;
@@ -145,6 +389,27 @@ class MarkdownEditor {
     
     loadFiles() {
         this.elements.fileInput.click();
+    }
+    
+    refreshFileList() {
+        // Web版本：清空当前文件列表，让用户重新选择
+        if (this.loadedFiles.length > 0) {
+            if (confirm('确定要清空当前文件列表吗？这将清除所有已加载的文件。')) {
+                this.loadedFiles = [];
+                this.filteredFiles = [];
+                this.currentFile = null;
+                this.currentContent = '';
+                this.isModified = false;
+                this.elements.editor.value = '';
+                this.updatePreview();
+                this.renderFileList();
+                this.updateUI();
+                this.saveToStorage();
+            }
+        } else {
+            // 如果没有文件，直接触发文件选择
+            this.loadFiles();
+        }
     }
     
     handleFileLoad(event) {
@@ -186,6 +451,8 @@ class MarkdownEditor {
                 if (this.loadedFiles.length === 1) {
                     this.loadFileContent(fileData);
                 }
+                
+                this.saveToStorage();
             };
             reader.readAsText(file);
         });
@@ -194,15 +461,6 @@ class MarkdownEditor {
         setTimeout(() => {
             event.target.value = '';
         }, 100);
-    }
-    
-    clearFiles() {
-        if (confirm('确定要清空所有加载的文件吗？')) {
-            this.loadedFiles = [];
-            this.filteredFiles = [];
-            this.renderFileList();
-            this.updateUI();
-        }
     }
     
     filterFiles() {
@@ -261,6 +519,9 @@ class MarkdownEditor {
         this.updatePreview();
         this.updateUI();
         this.updateFileListSelection();
+        
+        // 添加到最近文件记录
+        this.addToRecentFiles(file.name, file.content);
     }
     
     updateFileListSelection() {
@@ -289,6 +550,9 @@ class MarkdownEditor {
         this.currentContent = content;
         this.isModified = false;
         this.updateUI();
+        
+        // 添加到最近文件记录
+        this.addToRecentFiles(fileName, content);
     }
     
     exportHTML() {
@@ -335,6 +599,8 @@ ${marked.parse(content)}
         this.elements.editModeBtn.classList.toggle('active', mode === 'edit');
         this.elements.splitModeBtn.classList.toggle('active', mode === 'split');
         this.elements.previewModeBtn.classList.toggle('active', mode === 'preview');
+        
+        this.saveToStorage();
     }
     
     toggleMode() {
@@ -349,12 +615,11 @@ ${marked.parse(content)}
         document.documentElement.setAttribute('data-theme', this.currentTheme);
         this.elements.themeToggle.textContent = this.currentTheme === 'light' ? '🌙' : '☀️';
         
-        localStorage.setItem('theme', this.currentTheme);
+        this.saveToStorage();
     }
     
     loadTheme() {
-        const savedTheme = localStorage.getItem('theme') || 'light';
-        this.currentTheme = savedTheme;
+        // currentTheme 已经在 loadFromStorage 中设置
         document.documentElement.setAttribute('data-theme', this.currentTheme);
         this.elements.themeToggle.textContent = this.currentTheme === 'light' ? '🌙' : '☀️';
     }
@@ -411,11 +676,6 @@ ${marked.parse(content)}
             
             this.onEditorChange();
         }
-        
-        // 更新视图模式按钮状态
-        this.elements.editModeBtn.classList.toggle('active', this.currentMode === 'edit');
-        this.elements.splitModeBtn.classList.toggle('active', this.currentMode === 'split');
-        this.elements.previewModeBtn.classList.toggle('active', this.currentMode === 'preview');
         
         // 更新光标位置
         setTimeout(() => this.updateCursorPosition(), 0);
@@ -488,57 +748,6 @@ ${marked.parse(content)}
     autoSave() {
         if (this.isModified) {
             this.saveToStorage();
-        }
-    }
-    
-    saveToStorage() {
-        const data = {
-            currentFile: this.currentFile,
-            currentContent: this.elements.editor.value,
-            loadedFiles: this.loadedFiles,
-            currentTheme: this.currentTheme,
-            currentMode: this.currentMode
-        };
-        localStorage.setItem('markdownEditor', JSON.stringify(data));
-    }
-    
-    loadFromStorage() {
-        try {
-            const data = JSON.parse(localStorage.getItem('markdownEditor') || '{}');
-            
-            if (data.loadedFiles) {
-                this.loadedFiles = data.loadedFiles;
-                this.filteredFiles = [...this.loadedFiles];
-                this.renderFileList();
-            }
-            
-            if (data.currentFile && data.currentContent !== undefined) {
-                this.currentFile = data.currentFile;
-                this.currentContent = data.currentContent;
-                this.elements.editor.value = data.currentContent;
-                this.updatePreview();
-            }
-            
-            if (data.currentTheme) {
-                this.currentTheme = data.currentTheme;
-                document.documentElement.setAttribute('data-theme', this.currentTheme);
-                this.elements.themeToggle.textContent = this.currentTheme === 'light' ? '🌙' : '☀️';
-            }
-            
-            if (data.currentMode) {
-                this.currentMode = data.currentMode;
-                this.elements.editorContainer.className = `editor-container mode-${this.currentMode}`;
-                const modeTexts = {
-                    split: '👁️ 预览',
-                    edit: '📝 编辑',
-                    preview: '🔄 分割'
-                };
-                this.elements.modeToggle.textContent = modeTexts[this.currentMode];
-            }
-            
-            this.updateUI();
-        } catch (error) {
-            console.error('加载存储数据失败:', error);
         }
     }
 }

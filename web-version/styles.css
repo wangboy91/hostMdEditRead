@@ -526,3 +526,180 @@ body {
 @keyframes spin {
     to { transform: rotate(360deg); }
 }
+
+/* 标签页样式 */
+.sidebar-tabs {
+    display: flex;
+    background-color: var(--bg-tertiary);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.tab-btn {
+    flex: 1;
+    padding: 8px 12px;
+    border: none;
+    background-color: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 0.9em;
+    transition: all 0.2s;
+    border-bottom: 2px solid transparent;
+}
+
+.tab-btn:hover {
+    background-color: var(--bg-secondary);
+    color: var(--text-color);
+}
+
+.tab-btn.active {
+    background-color: var(--bg-color);
+    color: var(--primary-color);
+    border-bottom-color: var(--primary-color);
+}
+
+/* 标签内容 */
+.tab-content {
+    display: none;
+    flex: 1;
+    overflow-y: auto;
+}
+
+.tab-content.active {
+    display: flex;
+    flex-direction: column;
+}
+
+/* 最近记录样式 */
+.recent-list {
+    padding: 8px 0;
+}
+
+.recent-section {
+    margin-bottom: 16px;
+}
+
+.recent-section h4 {
+    padding: 8px 16px;
+    margin: 0;
+    font-size: 0.9em;
+    color: var(--text-secondary);
+    background-color: var(--bg-tertiary);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.recent-files {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.recent-item {
+    padding: 8px 16px;
+    cursor: pointer;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    transition: background-color 0.2s;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.recent-item:hover {
+    background-color: var(--bg-tertiary);
+}
+
+.recent-item-name {
+    font-weight: 500;
+    font-size: 0.9em;
+}
+
+.recent-item-path {
+    font-size: 0.8em;
+    color: var(--text-secondary);
+    opacity: 0.8;
+}
+
+.recent-item-time {
+    font-size: 0.7em;
+    color: var(--text-secondary);
+    opacity: 0.6;
+}
+
+.recent-empty {
+    padding: 16px;
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 0.9em;
+}
+
+/* 下拉菜单样式 */
+.dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.dropdown-content {
+    display: none;
+    position: absolute;
+    right: 0;
+    top: 100%;
+    background-color: var(--bg-color);
+    min-width: 250px;
+    max-width: 350px;
+    box-shadow: var(--shadow-lg);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    z-index: 1000;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.dropdown.active .dropdown-content {
+    display: block;
+}
+
+.dropdown-header {
+    padding: 8px 12px;
+    background-color: var(--bg-tertiary);
+    border-bottom: 1px solid var(--border-color);
+    font-size: 0.9em;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.history-list {
+    padding: 4px 0;
+}
+
+.history-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.history-item:hover {
+    background-color: var(--bg-tertiary);
+}
+
+.history-item:last-child {
+    border-bottom: none;
+}
+
+.history-item-name {
+    font-weight: 500;
+    font-size: 0.9em;
+    margin-bottom: 2px;
+}
+
+.history-item-path {
+    font-size: 0.8em;
+    color: var(--text-secondary);
+    opacity: 0.8;
+    word-break: break-all;
+}
+
+.history-empty {
+    padding: 16px 12px;
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 0.9em;
+}

@@ -12,12 +12,17 @@ let markdownFiles = [];
 let filteredFiles = [];
 let editor = null;
 let lastScannedDirectory = null; // 记录最后扫描的根目录
+let recentDirectories = []; // 最近打开的目录记录
+let recentFiles = []; // 最近打开的文件记录
 
 // DOM 元素 - 将在initApp中初始化
 let elements = {};
 
 // 初始化应用
 function initApp() {
+    // 加载本地存储数据
+    loadFromLocalStorage();
+    
     // 初始化DOM元素
     elements = {
         // 工具栏按钮
@@ -35,6 +40,18 @@ function initApp() {
         refreshBtn: document.getElementById('refreshBtn'),
         searchInput: document.getElementById('searchInput'),
         fileList: document.getElementById('fileList'),
+        
+        // 标签页
+        filesTab: document.getElementById('filesTab'),
+        recentTab: document.getElementById('recentTab'),
+        recentList: document.getElementById('recentList'),
+        recentDirectories: document.getElementById('recentDirectories'),
+        recentFiles: document.getElementById('recentFiles'),
+        
+        // 历史下拉菜单
+        historyBtn: document.getElementById('historyBtn'),
+        historyDropdown: document.getElementById('historyDropdown'),
+        historyList: document.getElementById('historyList'),
         
         // 编辑器和预览
         editor: document.getElementById('editor'),
@@ -75,6 +92,11 @@ function initApp() {
     loadTheme();
     updateUI();
     
+    // 如果有上次扫描的目录，自动加载
+    if (lastScannedDirectory) {
+        autoLoadLastDirectory();
+    }
+    
     // 配置 marked
     marked.setOptions({
         highlight: function(code, lang) {
@@ -106,6 +128,20 @@ function setupEventListeners() {
     elements.scanBtn.addEventListener('click', scanFiles);
     elements.refreshBtn.addEventListener('click', refreshFileList);
     elements.searchInput.addEventListener('input', filterFiles);
+    
+    // 标签页
+    elements.filesTab.addEventListener('click', () => switchTab('files'));
+    elements.recentTab.addEventListener('click', () => switchTab('recent'));
+    
+    // 历史下拉菜单
+    elements.historyBtn.addEventListener('click', toggleHistoryDropdown);
+    
+    // 点击其他地方关闭下拉菜单
+    document.addEventListener('click', (e) => {
+        if (!elements.historyBtn.contains(e.target) && !elements.historyDropdown.contains(e.target)) {
+            closeHistoryDropdown();
+        }
+    });
     
     // 编辑器
     elements.editor.addEventListener('input', onEditorChange);
@@ -240,6 +276,9 @@ async function loadFile(filePath) {
             updatePreview();
             updateUI();
             
+            // 添加到最近文件记录
+            addToRecentFiles(filePath);
+            
             // 更新文件列表中的选中状态
             updateFileListSelection();
         } else {
@@ -316,6 +355,7 @@ async function scanFiles() {
             const scanResult = await ipcRenderer.invoke('scan-markdown-files', result.path);
             if (scanResult.success) {
                 lastScannedDirectory = result.path; // 记录扫描的根目录
+                addToRecentDirectories(result.path); // 添加到最近目录记录
                 markdownFiles = scanResult.files;
                 filteredFiles = [...markdownFiles];
                 renderFileList();
@@ -489,13 +529,12 @@ function toggleTheme() {
     elements.themeToggle.textContent = currentTheme === 'light' ? '🌙' : '☀️';
     
     // 保存主题设置
-    localStorage.setItem('theme', currentTheme);
+    saveToLocalStorage();
 }
 
 // 加载主题
 function loadTheme() {
-    const savedTheme = localStorage.getItem('theme') || 'light';
-    currentTheme = savedTheme;
+    // currentTheme 已经在 loadFromLocalStorage 中设置
     document.documentElement.setAttribute('data-theme', currentTheme);
     elements.themeToggle.textContent = currentTheme === 'light' ? '🌙' : '☀️';
 }
@@ -660,6 +699,327 @@ function updateUI() {
     } catch (error) {
         console.error('updateUI error:', error);
         // 即使出错也不要阻止应用运行
+    }
+}
+
+// 本地存储管理
+function saveToLocalStorage() {
+    try {
+        const data = {
+            lastScannedDirectory,
+            recentDirectories,
+            recentFiles,
+            currentTheme
+        };
+        localStorage.setItem('markdownEditorData', JSON.stringify(data));
+    } catch (error) {
+        console.error('保存本地数据失败:', error);
+    }
+}
+
+function loadFromLocalStorage() {
+    try {
+        const data = localStorage.getItem('markdownEditorData');
+        if (data) {
+            const parsed = JSON.parse(data);
+            lastScannedDirectory = parsed.lastScannedDirectory || null;
+            recentDirectories = parsed.recentDirectories || [];
+            recentFiles = parsed.recentFiles || [];
+            currentTheme = parsed.currentTheme || 'light';
+        }
+    } catch (error) {
+        console.error('加载本地数据失败:', error);
+        // 重置为默认值
+        lastScannedDirectory = null;
+        recentDirectories = [];
+        recentFiles = [];
+        currentTheme = 'light';
+    }
+}
+
+// 添加目录到最近记录
+function addToRecentDirectories(directory) {
+    if (!directory) return;
+    
+    // 移除已存在的记录
+    recentDirectories = recentDirectories.filter(dir => dir.path !== directory);
+    
+    // 添加到开头
+    recentDirectories.unshift({
+        path: directory,
+        name: path.basename(directory),
+        timestamp: Date.now()
+    });
+    
+    // 保持最多10条记录
+    if (recentDirectories.length > 10) {
+        recentDirectories = recentDirectories.slice(0, 10);
+    }
+    
+    saveToLocalStorage();
+}
+
+// 添加文件到最近记录
+function addToRecentFiles(filePath) {
+    if (!filePath) return;
+    
+    // 移除已存在的记录
+    recentFiles = recentFiles.filter(file => file.path !== filePath);
+    
+    // 添加到开头
+    recentFiles.unshift({
+        path: filePath,
+        name: path.basename(filePath),
+        directory: path.dirname(filePath),
+        timestamp: Date.now()
+    });
+    
+    // 保持最多10条记录
+    if (recentFiles.length > 10) {
+        recentFiles = recentFiles.slice(0, 10);
+    }
+    
+    saveToLocalStorage();
+}
+
+// 标签页切换
+function switchTab(tabName) {
+    // 更新标签按钮状态
+    elements.filesTab.classList.toggle('active', tabName === 'files');
+    elements.recentTab.classList.toggle('active', tabName === 'recent');
+    
+    // 更新内容显示
+    elements.fileList.classList.toggle('active', tabName === 'files');
+    elements.recentList.classList.toggle('active', tabName === 'recent');
+    
+    // 如果切换到最近记录标签，渲染最近记录
+    if (tabName === 'recent') {
+        renderRecentRecords();
+    }
+}
+
+// 渲染最近记录
+function renderRecentRecords() {
+    renderRecentDirectories();
+    renderRecentFiles();
+}
+
+// 渲染最近目录
+function renderRecentDirectories() {
+    if (!elements.recentDirectories) return;
+    
+    if (recentDirectories.length === 0) {
+        elements.recentDirectories.innerHTML = '<div class="recent-empty">暂无最近目录</div>';
+        return;
+    }
+    
+    const html = recentDirectories.map(dir => {
+        const timeStr = formatTime(dir.timestamp);
+        return `
+            <div class="recent-item" data-path="${dir.path}" data-type="directory">
+                <div class="recent-item-name">📁 ${dir.name}</div>
+                <div class="recent-item-path">${dir.path}</div>
+                <div class="recent-item-time">${timeStr}</div>
+            </div>
+        `;
+    }).join('');
+    
+    elements.recentDirectories.innerHTML = html;
+    
+    // 添加点击事件
+    elements.recentDirectories.querySelectorAll('.recent-item').forEach(item => {
+        item.addEventListener('click', async () => {
+            const dirPath = item.dataset.path;
+            if (dirPath) {
+                try {
+                    elements.scanBtn.innerHTML = '<div class="loading"></div>';
+                    elements.scanBtn.disabled = true;
+                    
+                    const scanResult = await ipcRenderer.invoke('scan-markdown-files', dirPath);
+                    if (scanResult.success) {
+                        lastScannedDirectory = dirPath;
+                        addToRecentDirectories(dirPath);
+                        markdownFiles = scanResult.files;
+                        filteredFiles = [...markdownFiles];
+                        
+                        // 切换到文件列表标签
+                        switchTab('files');
+                        renderFileList();
+                        updateUI();
+                    } else {
+                        alert('扫描目录失败: ' + scanResult.error);
+                    }
+                } catch (error) {
+                    console.error('扫描目录失败:', error);
+                    alert('扫描目录失败: ' + error.message);
+                } finally {
+                    elements.scanBtn.innerHTML = '📁';
+                    elements.scanBtn.disabled = false;
+                }
+            }
+        });
+    });
+}
+
+// 渲染最近文件
+function renderRecentFiles() {
+    if (!elements.recentFiles) return;
+    
+    if (recentFiles.length === 0) {
+        elements.recentFiles.innerHTML = '<div class="recent-empty">暂无最近文件</div>';
+        return;
+    }
+    
+    const html = recentFiles.map(file => {
+        const timeStr = formatTime(file.timestamp);
+        return `
+            <div class="recent-item" data-path="${file.path}" data-type="file">
+                <div class="recent-item-name">📄 ${file.name}</div>
+                <div class="recent-item-path">${file.directory}</div>
+                <div class="recent-item-time">${timeStr}</div>
+            </div>
+        `;
+    }).join('');
+    
+    elements.recentFiles.innerHTML = html;
+    
+    // 添加点击事件
+    elements.recentFiles.querySelectorAll('.recent-item').forEach(item => {
+        item.addEventListener('click', () => {
+            const filePath = item.dataset.path;
+            if (filePath && (!isModified || confirm('当前文件未保存，确定要打开新文件吗？'))) {
+                loadFile(filePath);
+                // 切换到文件列表标签
+                switchTab('files');
+            }
+        });
+    });
+}
+
+// 格式化时间
+function formatTime(timestamp) {
+    const now = Date.now();
+    const diff = now - timestamp;
+    const minutes = Math.floor(diff / (1000 * 60));
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    
+    if (minutes < 1) return '刚刚';
+    if (minutes < 60) return `${minutes}分钟前`;
+    if (hours < 24) return `${hours}小时前`;
+    if (days < 7) return `${days}天前`;
+    
+    const date = new Date(timestamp);
+    return date.toLocaleDateString('zh-CN');
+}
+
+// 切换历史下拉菜单
+function toggleHistoryDropdown() {
+    const dropdown = elements.historyBtn.parentElement;
+    const isActive = dropdown.classList.contains('active');
+    
+    if (isActive) {
+        closeHistoryDropdown();
+    } else {
+        openHistoryDropdown();
+    }
+}
+
+// 打开历史下拉菜单
+function openHistoryDropdown() {
+    const dropdown = elements.historyBtn.parentElement;
+    dropdown.classList.add('active');
+    renderHistoryList();
+}
+
+// 关闭历史下拉菜单
+function closeHistoryDropdown() {
+    const dropdown = elements.historyBtn.parentElement;
+    dropdown.classList.remove('active');
+}
+
+// 渲染历史列表
+function renderHistoryList() {
+    if (!elements.historyList) return;
+    
+    if (recentDirectories.length === 0) {
+        elements.historyList.innerHTML = '<div class="history-empty">暂无历史记录</div>';
+        return;
+    }
+    
+    const html = recentDirectories.slice(0, 5).map(dir => {
+        return `
+            <div class="history-item" data-path="${dir.path}">
+                <div class="history-item-name">📁 ${dir.name}</div>
+                <div class="history-item-path">${dir.path}</div>
+            </div>
+        `;
+    }).join('');
+    
+    elements.historyList.innerHTML = html;
+    
+    // 添加点击事件
+    elements.historyList.querySelectorAll('.history-item').forEach(item => {
+        item.addEventListener('click', async () => {
+            const dirPath = item.dataset.path;
+            closeHistoryDropdown();
+            
+            if (dirPath) {
+                try {
+                    elements.scanBtn.innerHTML = '<div class="loading"></div>';
+                    elements.scanBtn.disabled = true;
+                    
+                    const scanResult = await ipcRenderer.invoke('scan-markdown-files', dirPath);
+                    if (scanResult.success) {
+                        lastScannedDirectory = dirPath;
+                        addToRecentDirectories(dirPath);
+                        markdownFiles = scanResult.files;
+                        filteredFiles = [...markdownFiles];
+                        
+                        // 确保在文件列表标签
+                        switchTab('files');
+                        renderFileList();
+                        updateUI();
+                    } else {
+                        alert('扫描目录失败: ' + scanResult.error);
+                    }
+                } catch (error) {
+                    console.error('扫描目录失败:', error);
+                    alert('扫描目录失败: ' + error.message);
+                } finally {
+                    elements.scanBtn.innerHTML = '📁';
+                    elements.scanBtn.disabled = false;
+                }
+            }
+        });
+    });
+}
+
+// 自动加载上次扫描的目录
+async function autoLoadLastDirectory() {
+    if (!lastScannedDirectory) return;
+    
+    try {
+        console.log('自动加载上次扫描的目录:', lastScannedDirectory);
+        
+        const scanResult = await ipcRenderer.invoke('scan-markdown-files', lastScannedDirectory);
+        if (scanResult.success) {
+            markdownFiles = scanResult.files;
+            filteredFiles = [...markdownFiles];
+            renderFileList();
+            updateUI();
+            console.log(`自动加载完成，找到 ${markdownFiles.length} 个文件`);
+        } else {
+            console.warn('自动加载上次目录失败:', scanResult.error);
+            // 如果目录不存在或无法访问，清除记录
+            lastScannedDirectory = null;
+            saveToLocalStorage();
+        }
+    } catch (error) {
+        console.error('自动加载上次目录失败:', error);
+        // 如果出错，清除记录
+        lastScannedDirectory = null;
+        saveToLocalStorage();
     }
 }
 
