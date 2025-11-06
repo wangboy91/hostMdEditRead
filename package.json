@@ -1,6 +1,6 @@
 {
   "name": "markdown-editor-reader",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "跨平台Markdown文档编辑和阅读工具",
   "main": "src/main.js",
   "scripts": {
